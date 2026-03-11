@@ -50,42 +50,26 @@ var httpClient = &http.Client{
 type UsdtCheckJob struct{}
 
 // ExpiredOrdersJob 处理过期订单的任务结构体
-// 负责定期检查并处理已过期的未支付订单
-/* type ExpiredOrdersJob struct{}
+// 负责清理一天前已经过期的订单
+type ExpiredOrdersJob struct{}
 
 // Run 实现 cron.Job 接口的 Run 方法，处理过期订单
 func (j ExpiredOrdersJob) Run() {
-	// 查询已过期的订单
-	var orders []sdb.Orders
-	if err := sdb.DB.Where("status = ?", sdb.StatusExpired).Find(&orders).Error; err != nil {
-		mylog.Logger.Info("查询过期订单失败", zap.Any("err", err))
+	cutoff := time.Now().Add(-24 * time.Hour).UnixMilli()
+
+	result := sdb.DB.Where("status = ? AND expiration_time <= ?", sdb.StatusExpired, cutoff).Delete(&sdb.Orders{})
+	if result.Error != nil {
+		mylog.Logger.Info("清理过期订单失败", zap.Any("err", result.Error))
 		return
 	}
 
-	if len(orders) == 0 {
-		mylog.Logger.Info("没有过期的订单需要处理")
+	if result.RowsAffected == 0 {
+		mylog.Logger.Info("没有需要清理的过期订单")
 		return
 	}
 
-	// 批量删除过期订单
-	for _, order := range orders {
-		err := sdb.DB.Transaction(func(tx *gorm.DB) error {
-			// 删除过期订单
-			if err := tx.Delete(&order).Error; err != nil {
-				mylog.Logger.Info("删除过期订单失败", zap.Any("err", err))
-				return err
-			}
-			return nil
-		})
-
-		if err != nil {
-			mylog.Logger.Info("处理过期订单失败", zap.Any("err", err), zap.String("trade_id", order.TradeId))
-			continue
-		}
-
-		mylog.Logger.Info("订单已删除", zap.String("trade_id", order.TradeId))
-	}
-} */
+	mylog.Logger.Info("清理过期订单完成", zap.Int64("deleted_count", result.RowsAffected))
+}
 
 // 定义一个异步请求参数的结构体
 
@@ -249,14 +233,13 @@ func Start() {
 
 		mylog.Logger.Info("未支付订单检测任务添加失败")
 	}
-	// 每天凌晨3点执行过期订单清理任务
-	/* 	_, err = c.AddJob("0 5 * * *", ExpiredOrdersJob{})
-	   	if err != nil {
-	   		mylog.Logger.Info("订单清理任务添加失败")
-	   	} */
-	// mylog.Logger.Info("订单清理任务已完成")
-	// 启动 Cron 调度器
+	// 每天凌晨1点执行过期订单清理任务，删除一天前已经过期的订单
+	_, err = c.AddJob("0 1 * * *", ExpiredOrdersJob{})
+	if err != nil {
+		mylog.Logger.Info("过期订单清理任务添加失败")
+	}
 
+	// 启动 Cron 调度器
 	_, err = c.AddJob("@every 10m", AutoRate{})
 	if err != nil {
 		mylog.Logger.Info("自动汇率任务添加失败")

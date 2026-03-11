@@ -23,17 +23,33 @@
         --hover-bg: #3e3e3e;
       }
 
+      body[data-theme="light"] {
+        --primary: #1b2430;
+        --secondary: #5f6b7a;
+        --accent: #1f8f5f;
+        --danger: #d9485f;
+        --border: #d3dae3;
+        --surface: #ffffff;
+        --background: linear-gradient(180deg, #f5f8fb 0%, #e8eef5 100%);
+        --card-bg: #f6f9fc;
+        --hover-bg: #eaf1f7;
+      }
+
       body {
         font-family: Arial, sans-serif;
         background: var(--background);
         color: var(--primary);
         line-height: 1.5;
         -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .container {
+        width: 100%;
         max-width: 400px;
-        margin: 0 auto;
         padding: 24px 16px;
       }
 
@@ -54,6 +70,35 @@
         align-items: center;
         justify-content: space-between;
         margin-bottom: 32px;
+      }
+
+      .language-switcher {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .language-select,
+      .theme-toggle {
+        background: var(--card-bg);
+        color: var(--primary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        outline: none;
+      }
+
+      .language-select:hover,
+      .theme-toggle:hover {
+        background: var(--hover-bg);
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .logo {
@@ -83,12 +128,30 @@
         font-weight: 700;
         color: var(--primary);
         font-feature-settings: "tnum";
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
       }
 
       .amount small {
         font-size: 16px;
         font-weight: 500;
         margin-left: 4px;
+      }
+
+      .copy-icon {
+        width: 18px;
+        height: 18px;
+        color: var(--secondary);
+        transition: color 0.3s ease-in-out;
+        flex-shrink: 0;
+      }
+
+      .amount:hover .copy-icon,
+      .address:hover .copy-icon {
+        color: var(--primary);
+        cursor: pointer;
       }
 
       .address-section {
@@ -113,10 +176,15 @@
         line-height: 1.4;
         border: 1px solid var(--border);
         transition: 0.3s ease-in-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
       }
 
       .address:hover {
         background: var(--hover-bg);
+        cursor: pointer;
       }
 
       .qr-section {
@@ -130,6 +198,10 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+      }
+
+      .qr-details {
+        width: 100%;
       }
 
       .qr-code {
@@ -397,6 +469,7 @@
           display: flex;
           gap: 32px;
           margin: 32px 0;
+          flex-direction: column;
         }
 
         .qr-section {
@@ -410,13 +483,13 @@
           background: var(--card-bg);
           border-radius: 15px;
           border: 1px solid var(--border);
+          display: none;
         }
 
         .qr-code {
           width: 240px;
           height: 240px;
           padding: 12px;
-          margin-bottom: 24px;
         }
 
         .address-section {
@@ -434,6 +507,7 @@
 
         .warning {
           font-size: 15px;
+          font-weight: bolder;
           padding: 16px 24px;
         }
 
@@ -473,6 +547,14 @@
           padding: 16px 32px;
           font-size: 15px;
         }
+
+        .language-select {
+          font-size: 14px;
+        }
+
+        .theme-toggle {
+          font-size: 14px;
+        }
       }
     </style>
   </head>
@@ -484,10 +566,59 @@
             <img src="{{.Logo}}" alt="{{.Currency}}" />
             <span>{{.Currency}}</span>
           </div>
+          <div class="language-switcher">
+            <button
+              id="themeToggle"
+              class="theme-toggle"
+              type="button"
+              data-i18n-title="themeToggleTitle"
+            >
+              <span id="themeIcon">🌙</span>
+              <span data-i18n="themeDark">暗色</span>
+            </button>
+            <select
+              id="languageSelect"
+              class="language-select"
+              aria-label="Language"
+            >
+              <option value="zh-CN">简体中文</option>
+              <option value="en">English</option>
+              <option value="zh-TW">繁體中文</option>
+            </select>
+          </div>
         </div>
 
         <div class="amount-section">
-          <div class="amount">{{.ActualAmount}} <small></small></div>
+          <div
+            class="amount"
+            onclick="copyAmount()"
+            data-i18n-title="copyAmountTitle"
+          >
+            <span>{{.ActualAmount}}</span>
+            <svg
+              class="copy-icon"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="5"
+                y="3"
+                width="8"
+                height="10"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.2"
+              />
+              <path
+                d="M3.5 10.5H3A1 1 0 012 9.5v-7A1 1 0 013 1.5h5A1 1 0 019 2v.5"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <small></small>
+          </div>
         </div>
 
         <div class="main-content">
@@ -497,8 +628,85 @@
               class="qr-code"
               onclick="copyAddress()"
               style="cursor: pointer"
-              title="点击复制地址"
+              data-i18n-title="copyAddressTitle"
             ></div>
+
+            <div class="qr-details">
+              <div class="address-section">
+                <div class="address-container">
+                  <div
+                    class="address"
+                    onclick="copyAddress()"
+                    data-i18n-title="copyAddressTitle"
+                  >
+                    <span>{{.Token}}</span>
+                    <svg
+                      class="copy-icon"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <rect
+                        x="5"
+                        y="3"
+                        width="8"
+                        height="10"
+                        rx="1.5"
+                        stroke="currentColor"
+                        stroke-width="1.2"
+                      />
+                      <path
+                        d="M3.5 10.5H3A1 1 0 012 9.5v-7A1 1 0 013 1.5h5A1 1 0 019 2v.5"
+                        stroke="currentColor"
+                        stroke-width="1.2"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="warning">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M8 5v4M8 11.5v.5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M8 14A6 6 0 108 2a6 6 0 000 12z"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  />
+                </svg>
+                <span data-i18n="warningText">请确保支付金额与显示金额一致，否则无法到账！</span>
+              </div>
+
+              <button class="details-toggle" onclick="toggleDetails()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M4 6l4 4 4-4"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                <span data-i18n="orderDetails">订单详情</span>
+              </button>
+
+              <div class="details-content" id="details">
+                <div class="details-row">
+                  <span class="info-label" data-i18n="orderNumber">订单号</span>
+                  <span class="info-value">{{.TradeId}}</span>
+                </div>
+                <div class="details-row">
+                  <span class="info-label" data-i18n="payee">收款方</span>
+                  <span class="info-value">{{.AppName}}</span>
+                </div>
+              </div>
+            </div>
 
             <div class="countdown">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -510,7 +718,7 @@
                   stroke-linejoin="round"
                 />
               </svg>
-              剩余支付时间：<span class="timer">
+              <span data-i18n="remainingPaymentTime">剩余支付时间：</span><span class="timer">
                 <span class="hours">00</span>:<span class="minutes">00</span
                 >:<span class="seconds">00</span>
               </span>
@@ -519,59 +727,6 @@
 
           <!-- 右侧信息区域 -->
           <div class="info-section">
-            <div class="address-section">
-              <div class="address-container">
-                <div
-                  class="address"
-                  onclick="copyAddress()"
-                  style="cursor: pointer"
-                  title="点击复制地址"
-                >
-                  {{.Token}}
-                </div>
-              </div>
-            </div>
-
-            <div class="warning">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M8 5v4M8 11.5v.5"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                />
-                <path
-                  d="M8 14A6 6 0 108 2a6 6 0 000 12z"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                />
-              </svg>
-              <span>请确保支付金额与显示金额一致，否则无法到账！</span>
-            </div>
-
-            <button class="details-toggle" onclick="toggleDetails()">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M4 6l4 4 4-4"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-              <span>订单详情</span>
-            </button>
-
-            <div class="details-content" id="details">
-              <div class="details-row">
-                <span class="info-label">订单号</span>
-                <span class="info-value">{{.TradeId}}</span>
-              </div>
-              <div class="details-row">
-                <span class="info-label">收款方</span>
-                <span class="info-value">{{.AppName}}</span>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -585,7 +740,7 @@
                 stroke-linecap="round"
               />
             </svg>
-            遇到问题？联系客服
+            <span data-i18n="contactSupport">遇到问题？联系客服</span>
           </a>
         </div>
       </div>
@@ -594,6 +749,186 @@
     <script src="/js/jquery.min.js"></script>
     <script src="/js/jquery.qrcode.min.js"></script>
     <script>
+      const translations = {
+        'zh-CN': {
+          pageTitle: '{{.Currency}}支付页面',
+          copyAddressTitle: '点击复制地址',
+          copyAmountTitle: '点击复制支付金额',
+          remainingPaymentTime: '剩余支付时间：',
+          warningText: '请确保支付金额与显示金额一致，否则无法到账！',
+          orderDetails: '订单详情',
+          orderNumber: '订单号',
+          payee: '收款方',
+          contactSupport: '遇到问题？联系客服',
+          paymentSuccess: '支付成功',
+          redirecting: '正在跳转到商户页面...',
+          addressCopied: '地址已复制',
+          amountCopied: '支付金额已复制',
+          copyFailed: '复制失败，请手动复制',
+          invalidExpiration: '无效的过期时间',
+          paymentTimedOut: '支付已超时',
+          themeLight: '白天',
+          themeDark: '黑夜',
+          themeToggleTitle: '切换白天/黑夜模式'
+        },
+        en: {
+          pageTitle: '{{.Currency}} Payment Page',
+          copyAddressTitle: 'Click to copy address',
+          copyAmountTitle: 'Click to copy payment amount',
+          remainingPaymentTime: 'Time remaining:',
+          warningText: 'Make sure the payment amount matches exactly, or the funds cannot be credited.',
+          orderDetails: 'Order Details',
+          orderNumber: 'Order No.',
+          payee: 'Payee',
+          contactSupport: 'Need help? Contact support',
+          paymentSuccess: 'Payment Successful',
+          redirecting: 'Redirecting to the merchant page...',
+          addressCopied: 'Address copied',
+          amountCopied: 'Payment amount copied',
+          copyFailed: 'Copy failed, please copy it manually',
+          invalidExpiration: 'Invalid expiration time',
+          paymentTimedOut: 'Payment timed out',
+          themeLight: 'Light',
+          themeDark: 'Dark',
+          themeToggleTitle: 'Toggle light and dark mode'
+        },
+        'zh-TW': {
+          pageTitle: '{{.Currency}}支付頁面',
+          copyAddressTitle: '點擊複製地址',
+          copyAmountTitle: '點擊複製支付金額',
+          remainingPaymentTime: '剩餘支付時間：',
+          warningText: '請確保支付金額與顯示金額一致，否則無法到帳！',
+          orderDetails: '訂單詳情',
+          orderNumber: '訂單號',
+          payee: '收款方',
+          contactSupport: '遇到問題？聯繫客服',
+          paymentSuccess: '支付成功',
+          redirecting: '正在跳轉到商戶頁面...',
+          addressCopied: '地址已複製',
+          amountCopied: '支付金額已複製',
+          copyFailed: '複製失敗，請手動複製',
+          invalidExpiration: '無效的過期時間',
+          paymentTimedOut: '支付已超時',
+          themeLight: '亮色',
+          themeDark: '暗色',
+          themeToggleTitle: '切換白天/黑夜模式'
+        }
+      };
+
+      let currentLang = 'zh-CN';
+      let currentTheme = 'dark';
+
+      function normalizeLang(lang) {
+        if (!lang) {
+          return 'zh-CN';
+        }
+
+        const lowerLang = lang.toLowerCase();
+        if (lowerLang.includes('zh-tw') || lowerLang.includes('zh-hk') || lowerLang.includes('zh-mo') || lowerLang.includes('hant')) {
+          return 'zh-TW';
+        }
+        if (lowerLang.includes('en')) {
+          return 'en';
+        }
+        return 'zh-CN';
+      }
+
+      function t(key) {
+        return translations[currentLang][key] || translations['zh-CN'][key] || key;
+      }
+
+      function applyTranslations(lang) {
+        currentLang = translations[lang] ? lang : 'zh-CN';
+        document.documentElement.lang = currentLang;
+        document.title = t('pageTitle');
+
+        document.querySelectorAll('[data-i18n]').forEach((element) => {
+          element.textContent = t(element.dataset.i18n);
+        });
+
+        document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+          element.title = t(element.dataset.i18nTitle);
+        });
+
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+          languageSelect.value = currentLang;
+        }
+
+        updateThemeToggleLabel();
+      }
+
+      function initLanguage() {
+        const params = new URLSearchParams(window.location.search);
+        const queryLang = params.get('lang');
+        const savedLang = localStorage.getItem('pay-page-lang');
+        const browserLang = navigator.language || navigator.userLanguage;
+        const defaultLang = normalizeLang(queryLang || savedLang || browserLang);
+
+        applyTranslations(defaultLang);
+
+        const languageSelect = document.getElementById('languageSelect');
+        if (languageSelect) {
+          languageSelect.addEventListener('change', (event) => {
+            const nextLang = normalizeLang(event.target.value);
+            localStorage.setItem('pay-page-lang', nextLang);
+            applyTranslations(nextLang);
+          });
+        }
+      }
+
+      function applyTheme(theme) {
+        currentTheme = theme === 'light' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', currentTheme);
+        updateThemeToggleLabel();
+      }
+
+      function updateThemeToggleLabel() {
+        const themeIcon = document.getElementById('themeIcon');
+        const themeLabel = document.querySelector('#themeToggle [data-i18n]');
+        const themeToggle = document.getElementById('themeToggle');
+
+        if (!themeIcon || !themeLabel || !themeToggle) {
+          return;
+        }
+
+        if (currentTheme === 'light') {
+          themeIcon.textContent = '☀️';
+          themeLabel.textContent = t('themeLight');
+        } else {
+          themeIcon.textContent = '🌙';
+          themeLabel.textContent = t('themeDark');
+        }
+      }
+
+      function initTheme() {
+        const canDetectTheme = window.matchMedia && typeof window.matchMedia === 'function';
+        if (!canDetectTheme) {
+          applyTheme('light');
+          return;
+        }
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        applyTheme(mediaQuery.matches ? 'dark' : 'light');
+
+        if (typeof mediaQuery.addEventListener === 'function') {
+          mediaQuery.addEventListener('change', (event) => {
+            applyTheme(event.matches ? 'dark' : 'light');
+          });
+        } else if (typeof mediaQuery.addListener === 'function') {
+          mediaQuery.addListener((event) => {
+            applyTheme(event.matches ? 'dark' : 'light');
+          });
+        }
+
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+          themeToggle.addEventListener('click', () => {
+            applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+          });
+        }
+      }
+
       // Toast 提示函数
       function showToast(message, duration = 1500) {
         // 移除现有的 toast
@@ -630,8 +965,8 @@
               <circle cx="24" cy="24" r="24" fill="${accentColor}"/>
               <path d="M16 24l6 6 12-12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            <div class="modal-title">支付成功</div>
-            <div class="modal-message">正在跳转到商户页面...</div>
+            <div class="modal-title">${t('paymentSuccess')}</div>
+            <div class="modal-message">${t('redirecting')}</div>
           </div>
         `;
         document.body.appendChild(modal);
@@ -652,9 +987,9 @@
 
           try {
             document.execCommand('copy');
-            showToast('地址已复制');
+            showToast(t('addressCopied'));
           } catch (err) {
-            showToast('复制失败，请手动复制');
+            showToast(t('copyFailed'));
           } finally {
             document.body.removeChild(textArea);
           }
@@ -663,8 +998,35 @@
 
         // 使用现代 Clipboard API
         navigator.clipboard.writeText(address)
-          .then(() => showToast('地址已复制'))
-          .catch(() => showToast('复制失败，请手动复制'));
+          .then(() => showToast(t('addressCopied')))
+          .catch(() => showToast(t('copyFailed')));
+      }
+
+      function copyAmount() {
+        const amount = '{{.ActualAmount}}';
+
+        if (!navigator.clipboard) {
+          const textArea = document.createElement('textarea');
+          textArea.value = amount;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-9999px';
+          document.body.appendChild(textArea);
+          textArea.select();
+
+          try {
+            document.execCommand('copy');
+            showToast(t('amountCopied'));
+          } catch (err) {
+            showToast(t('copyFailed'));
+          } finally {
+            document.body.removeChild(textArea);
+          }
+          return;
+        }
+
+        navigator.clipboard.writeText(amount)
+          .then(() => showToast(t('amountCopied')))
+          .catch(() => showToast(t('copyFailed')));
       }
 
       // 优化倒计时显示
@@ -683,7 +1045,7 @@
       function clock() {
         const timeout = new Date({{.ExpirationTime}}); // 数据库现在存储毫秒时间戳
         if (isNaN(timeout)) {
-          showToast('无效的过期时间');
+          showToast(t('invalidExpiration'));
           return;
         }
 
@@ -692,7 +1054,7 @@
           const ms = timeout - now;
 
           if (ms <= 0) {
-            showToast('支付已超时');
+            showToast(t('paymentTimedOut'));
             setTimeout(() => {
               window.location.href = '{{.RedirectUrl}}';
             }, 1500);
@@ -759,6 +1121,8 @@
       }
 
       // 启动所有功能
+      initTheme();
+      initLanguage();
       clock();
       checkOrderStatus();
     </script>

@@ -740,6 +740,5 @@ func Start() {
 
 	// 读取系统设置
 	port := sdb.GetSetting().Httpport
-	// endless.ListenAndServe(":8080", r)
 	endless.ListenAndServe(fmt.Sprintf(":%d", port), r)
 }

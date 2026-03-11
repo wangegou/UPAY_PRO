@@ -126,6 +126,8 @@ type TradeIdTaskID struct {
 	TaskID  string `gorm:"column:TaskID"`
 }
 
+const DefaultHTTPPort = 8090
+
 func Start() {
 	mylog.Logger.Info("开始初始化数据库")
 	mylog.Logger.Info("开始迁移数据库")
@@ -173,7 +175,7 @@ func Start() {
 		result := DB.Create(&Setting{
 			AppUrl:                 "http://localhost",
 			SecretKey:              GenerateSecretKey(48),
-			Httpport:               8090,
+			Httpport:               DefaultHTTPPort,
 			Tgbotkey:               "",
 			Tgchatid:               "",
 			Barkkey:                "",
@@ -241,6 +243,10 @@ func GetSetting() Setting {
 	var setting Setting
 	DB.First(&setting)
 
+	if setting.Httpport < 1 || setting.Httpport > 65535 {
+		setting.Httpport = DefaultHTTPPort
+	}
+
 	/* if result.RowsAffected == 0 {
 		mylog.Logger.Info("系统设置不存在，创建默认设置")
 		// 创建默认设置
@@ -268,6 +274,20 @@ func GetSetting() Setting {
 	} */
 
 	return setting
+}
+
+func UpdateHttpPort(port int) error {
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("invalid http port: %d", port)
+	}
+
+	var setting Setting
+	result := DB.First(&setting)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return DB.Model(&setting).Update("Httpport", port).Error
 }
 
 func HashPassword(password string) (string, error) {

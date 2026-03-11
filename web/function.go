@@ -150,6 +150,26 @@ const ( // 定义常量
 	IncrementalMaximumNumber = 100  // 最大递增次数
 )
 
+func calculateActualAmount(amount, rate float64, attempts int) float64 {
+	// 汇率为 1 时直接使用原金额，并附加较小的三位小数偏移，避免金额检测误差。
+	if math.Abs(rate-1) < 1e-9 {
+		// 偏移范围控制在 0.001 - 0.120 之间，优先使用更小的小数。
+		randomMilli := rand.Intn(20) + 1 + attempts
+		return math.Round((amount+float64(randomMilli)/1000)*1000) / 1000
+	}
+
+	baseAmount := math.Round((amount/rate)*100) / 100
+	return math.Round((baseAmount+float64(attempts)*UsdtAmountPerIncrement)*100) / 100
+}
+
+func pendingOrderAmountExists(token string, actualAmount float64) bool {
+	var count int64
+	sdb.DB.Model(&sdb.Orders{}).
+		Where("token = ? AND status = ? AND actual_amount = ?", token, sdb.StatusWaitPay, actualAmount).
+		Count(&count)
+	return count > 0
+}
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		mylog.Logger.Info("进入中间件")
@@ -407,12 +427,9 @@ func CreateTransaction(c *gin.Context) {
 			return
 		}
 
-		// 计算基础金额
-		baseAmount := math.Round((requestParams.Amount/rate)*100) / 100
-
 		// 根据当前钱包的尝试次数计算递增金额
 		attempts := walletAttempts[Token]
-		ActualAmount = math.Round((baseAmount+float64(attempts)*UsdtAmountPerIncrement)*100) / 100
+		ActualAmount = calculateActualAmount(requestParams.Amount, rate, attempts)
 
 		// 检查换算后的金额是否符合最小支付金额
 		if ActualAmount < UsdtMinimumPaymentAmount {
@@ -421,6 +438,12 @@ func CreateTransaction(c *gin.Context) {
 		}
 
 		ActualAmount_Token := fmt.Sprintf("%s_%f", Token, ActualAmount)
+
+		// 先检查数据库中是否已有相同钱包和相同金额的未支付订单。
+		if pendingOrderAmountExists(Token, ActualAmount) {
+			walletAttempts[Token]++
+			continue
+		}
 
 		// 检查Redis中是否有该金额
 		currentAmount := getRedisAmount(ActualAmount_Token)
